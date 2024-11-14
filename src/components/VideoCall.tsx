@@ -6,16 +6,16 @@ const socket: Socket = io('http://localhost:3000');
 export const VideoCall: React.FC = () => {
   const [remoteSocketId, setRemoteSocketId] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const localAudioRef = useRef<HTMLAudioElement>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-    // Request access to the user's microphone
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((mediaStream) => {
+    // Request user media
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((mediaStream) => {
       setStream(mediaStream);
-      if (localAudioRef.current) {
-        localAudioRef.current.srcObject = mediaStream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = mediaStream;
       }
     });
 
@@ -40,14 +40,14 @@ export const VideoCall: React.FC = () => {
     });
 
     peerConnection.onicecandidate = (event) => {
-      if (event.candidate && remoteSocketId) {
+      if (event.candidate) {
         socket.emit('ice-candidate', { target: remoteSocketId, candidate: event.candidate });
       }
     };
 
     peerConnection.ontrack = (event) => {
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = event.streams[0];
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
       }
     };
 
@@ -86,11 +86,11 @@ export const VideoCall: React.FC = () => {
   };
 
   return (
-    <div className="app">
-      <h2>WebRTC Audio Call</h2>
+    <div>
+      <h2>WebRTC Video Call</h2>
       <div>
-        <audio ref={localAudioRef} autoPlay controls muted />
-        <audio ref={remoteAudioRef} autoPlay controls />
+        <video ref={localVideoRef} autoPlay playsInline muted />
+        <video ref={remoteVideoRef} autoPlay playsInline />
       </div>
       <button onClick={callUser} disabled={!remoteSocketId}>
         Call
@@ -98,4 +98,3 @@ export const VideoCall: React.FC = () => {
     </div>
   );
 };
-
